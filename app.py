@@ -1,4 +1,33 @@
+"""
+ResearchLens AI - Streamlit Web Application
+
+This file serves as the main entry point for the ResearchLens AI application,
+providing a dashboard for uploading, analyzing, searching, comparing, and 
+identifying gaps in scientific research papers.
+
+Features:
+    - PDF Uploading and Parsing
+    - AI-Powered Research Analysis
+    - Context-Aware Q&A Chat (RAG)
+    - Multi-Paper Comparison
+    - Research Gap Detection
+    - Citation Analytics
+    - Multi-Agent AI Routing (Supervisor-driven)
+"""
+
+import logging
 import streamlit as st
+
+# Configure logging to write to both stdout and a local file
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    handlers=[
+        logging.StreamHandler(),
+        logging.FileHandler("researchlens.log", encoding="utf-8")
+    ]
+)
+logger = logging.getLogger(__name__)
 
 from backend.parser import extract_text_from_pdf
 from backend.chunker import split_text
@@ -88,21 +117,25 @@ if uploaded_files:
         with st.spinner("Processing research papers..."):
 
             for uploaded_file in uploaded_files:
+                try:
+                    logger.info(f"Processing paper: {uploaded_file.name}")
+                    text = extract_text_from_pdf(uploaded_file)
+                    chunks = split_text(text)
+                    embeddings = create_embeddings(chunks)
+                    vector_store = create_vector_store(embeddings)
 
-                text = extract_text_from_pdf(uploaded_file)
-                chunks = split_text(text)
-                embeddings = create_embeddings(chunks)
-                vector_store = create_vector_store(embeddings)
+                    paper_data = {
+                        "name": uploaded_file.name,
+                        "text": text,
+                        "chunks": chunks,
+                        "embeddings": embeddings,
+                        "vector_store": vector_store
+                    }
 
-                paper_data = {
-                    "name": uploaded_file.name,
-                    "text": text,
-                    "chunks": chunks,
-                    "embeddings": embeddings,
-                    "vector_store": vector_store
-                }
-
-                st.session_state.papers.append(paper_data)
+                    st.session_state.papers.append(paper_data)
+                except Exception as e:
+                    logger.error(f"Error processing paper {uploaded_file.name}: {e}", exc_info=True)
+                    st.error(f"Failed to process {uploaded_file.name}: {str(e)}")
 
         st.session_state.processed = True
 
@@ -193,11 +226,13 @@ if st.session_state.processed:
         st.subheader("🤖 AI Research Analysis")
 
         if st.button("Analyze Paper"):
-
             with st.spinner("Gemini is analyzing..."):
-                analysis = analyze_paper(text)
-
-            st.markdown(analysis)
+                try:
+                    analysis = analyze_paper(text)
+                    st.markdown(analysis)
+                except Exception as e:
+                    logger.error(f"Error during paper analysis: {e}", exc_info=True)
+                    st.error("An error occurred while analyzing the paper. Please verify your Gemini API key and connection.")
 
     # =================================================
     # TAB 3
@@ -215,19 +250,19 @@ if st.session_state.processed:
                 st.warning("Please enter a question")
 
             else:
-
                 with st.spinner("Searching paper..."):
-
-                    retrieved_chunks = retrieve_chunks(
-                        question,
-                        vector_store,
-                        chunks
-                    )
-
-                    answer = answer_question(question, retrieved_chunks)
-
-                st.success("Answer Generated")
-                st.markdown(answer)
+                    try:
+                        retrieved_chunks = retrieve_chunks(
+                            question,
+                            vector_store,
+                            chunks
+                        )
+                        answer = answer_question(question, retrieved_chunks)
+                        st.success("Answer Generated")
+                        st.markdown(answer)
+                    except Exception as e:
+                        logger.error(f"Error during RAG chat: {e}", exc_info=True)
+                        st.error("Failed to retrieve an answer. Check your connection or API key.")
 
                 with st.expander("📚 Retrieved Context"):
 
@@ -256,12 +291,14 @@ if st.session_state.processed:
                 st.write(f"• {p['name']}")
 
             if st.button("Compare All Papers"):
-
                 with st.spinner("Comparing research papers..."):
-                    comparison = compare_papers(papers)
-
-                st.success("✅ Comparison Completed!")
-                st.markdown(comparison)
+                    try:
+                        comparison = compare_papers(papers)
+                        st.success("✅ Comparison Completed!")
+                        st.markdown(comparison)
+                    except Exception as e:
+                        logger.error(f"Error during paper comparison: {e}", exc_info=True)
+                        st.error("Failed to compare papers. Verify your connection or API key.")
 
     # =================================================
     # TAB 5
@@ -278,12 +315,14 @@ if st.session_state.processed:
         else:
 
             if st.button("Detect Research Gap"):
-
                 with st.spinner("Finding research gaps..."):
-                    gaps = detect_research_gap(papers)
-
-                st.success("✅ Research Gap Detection Completed!")
-                st.markdown(gaps)
+                    try:
+                        gaps = detect_research_gap(papers)
+                        st.success("✅ Research Gap Detection Completed!")
+                        st.markdown(gaps)
+                    except Exception as e:
+                        logger.error(f"Error during gap detection: {e}", exc_info=True)
+                        st.error("Failed to detect research gaps. Verify your connection or API key.")
 
     # =================================================
     # TAB 6
@@ -293,9 +332,13 @@ if st.session_state.processed:
 
         st.subheader("📈 Citation Analytics")
 
-        citation_result = citation_analysis(text)
-
-        st.metric("Total References", citation_result["total_references"])
+        try:
+            citation_result = citation_analysis(text)
+            st.metric("Total References", citation_result["total_references"])
+        except Exception as e:
+            logger.error(f"Error during citation analysis: {e}", exc_info=True)
+            st.error("An error occurred during citation extraction.")
+            citation_result = {"total_references": 0, "references": [], "top_authors": []}
 
         st.divider()
 
@@ -343,48 +386,27 @@ if st.session_state.processed:
             else:
 
                 with st.spinner("Supervisor Agent is selecting the best agent..."):
+                    try:
+                        agent = route_query(user_query)
+                        st.success(f"Supervisor selected: {agent}")
 
-                    agent = route_query(user_query)
+                        if agent == "summary":
+                            result = analyze_paper(text)
+                        elif agent == "comparison":
+                            result = compare_papers(papers)
+                        elif agent == "research_gap":
+                            result = detect_research_gap(papers)
+                        elif agent == "citation":
+                            agent_citation = citation_analysis(text)
+                            result = f"### Citation Analytics\n\nTotal References: {agent_citation['total_references']}\n\nTop Authors:\n\n{agent_citation['top_authors']}"
+                        else:
+                            retrieved_chunks = retrieve_chunks(user_query, vector_store, chunks)
+                            result = answer_question(user_query, retrieved_chunks)
 
-                    st.success(f"Supervisor selected: {agent}")
-
-                    if agent == "summary":
-
-                        result = analyze_paper(text)
-
-                    elif agent == "comparison":
-
-                        result = compare_papers(papers)
-
-                    elif agent == "research_gap":
-
-                        result = detect_research_gap(papers)
-
-                    elif agent == "citation":
-
-                        agent_citation = citation_analysis(text)
-
-                        result = f"""
-### Citation Analytics
-
-Total References: {agent_citation['total_references']}
-
-Top Authors:
-
-{agent_citation['top_authors']}
-"""
-
-                    else:
-
-                        retrieved_chunks = retrieve_chunks(
-                            user_query,
-                            vector_store,
-                            chunks
-                        )
-
-                        result = answer_question(user_query, retrieved_chunks)
-
-                    st.markdown(result)
+                        st.markdown(result)
+                    except Exception as e:
+                        logger.error(f"Error in Multi-Agent run: {e}", exc_info=True)
+                        st.error("Multi-Agent run failed. Please check your Gemini API key or connection.")
 
 else:
     st.info("👆 Upload Research Paper PDF to begin.")

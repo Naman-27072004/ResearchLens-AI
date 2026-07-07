@@ -1,6 +1,23 @@
-def create_comparison_prompt(papers):
+"""
+Comparison Prompt Generator
+
+This module constructs a highly detailed comparison prompt for the Gemini LLM
+to review, compare, and contrast multiple academic research papers, including
+producing comparison tables, identifying similarities/differences, and highlighting gaps.
+"""
+
+from typing import Any
+
+def create_comparison_prompt(papers: list[dict[str, Any]]) -> str:
     """
     Creates a detailed comparison prompt for multiple research papers.
+
+    Args:
+        papers (list of dict): A list of dictionaries representing the uploaded papers.
+            Each dictionary should contain 'name' and 'text'.
+
+    Returns:
+        str: The fully constructed prompt containing instructions and papers' text.
     """
 
     prompt = """
