@@ -46,6 +46,22 @@ from backend.supervisor import route_query
 
 
 # ----------------------------------------------------
+# ERROR HANDLING HELPER
+# ----------------------------------------------------
+
+def handle_api_error(e: Exception, default_msg: str):
+    err_str = str(e)
+    if "429" in err_str or "RESOURCE_EXHAUSTED" in err_str:
+        st.error("⚠️ **Quota Exceeded (Rate Limit or Daily Limit Hit)**:\n\nYou have exceeded the Gemini API Free Tier daily quota (which is strictly limited to 20 requests per day per project/model on the free tier). Please wait for the daily quota to reset, upgrade your plan in Google AI Studio, or try a different Gemini API key.")
+    elif "403" in err_str or "PERMISSION_DENIED" in err_str or "API key not valid" in err_str:
+        st.error("⚠️ **Invalid API Key or Permission Denied**:\n\nThe Gemini API key provided is not valid or doesn't have permission to access `gemini-2.5-flash`. Please verify the key is typed correctly.")
+    elif "API key not found" in err_str or "api_key is required" in err_str:
+        st.error("⚠️ **API Key Missing**:\n\nGemini API key was not found. Please paste your key in the sidebar or configure it in your Streamlit secrets.")
+    else:
+        st.error(f"{default_msg}\n\n*Details: {err_str}*")
+
+
+# ----------------------------------------------------
 # PAGE CONFIG
 # ----------------------------------------------------
 
@@ -266,7 +282,7 @@ if st.session_state.processed:
                     st.markdown(analysis)
                 except Exception as e:
                     logger.error(f"Error during paper analysis: {e}", exc_info=True)
-                    st.error("An error occurred while analyzing the paper. Please verify your Gemini API key and connection.")
+                    handle_api_error(e, "An error occurred while analyzing the paper.")
 
     # =================================================
     # TAB 3
@@ -296,7 +312,7 @@ if st.session_state.processed:
                         st.markdown(answer)
                     except Exception as e:
                         logger.error(f"Error during RAG chat: {e}", exc_info=True)
-                        st.error("Failed to retrieve an answer. Check your connection or API key.")
+                        handle_api_error(e, "Failed to retrieve an answer.")
 
                 with st.expander("📚 Retrieved Context"):
 
@@ -332,7 +348,7 @@ if st.session_state.processed:
                         st.markdown(comparison)
                     except Exception as e:
                         logger.error(f"Error during paper comparison: {e}", exc_info=True)
-                        st.error("Failed to compare papers. Verify your connection or API key.")
+                        handle_api_error(e, "Failed to compare papers.")
 
     # =================================================
     # TAB 5
@@ -356,7 +372,7 @@ if st.session_state.processed:
                         st.markdown(gaps)
                     except Exception as e:
                         logger.error(f"Error during gap detection: {e}", exc_info=True)
-                        st.error("Failed to detect research gaps. Verify your connection or API key.")
+                        handle_api_error(e, "Failed to detect research gaps.")
 
     # =================================================
     # TAB 6
@@ -440,7 +456,7 @@ if st.session_state.processed:
                         st.markdown(result)
                     except Exception as e:
                         logger.error(f"Error in Multi-Agent run: {e}", exc_info=True)
-                        st.error("Multi-Agent run failed. Please check your Gemini API key or connection.")
+                        handle_api_error(e, "Multi-Agent run failed.")
 
 else:
     st.info("👆 Upload Research Paper PDF to begin.")
