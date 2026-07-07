@@ -1,3 +1,30 @@
-.env
+# Byte-compiled / optimized / DLL files
 __pycache__/
-*.pycgit init
+*.py[cod]
+*$py.class
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Virtual Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Streamlit Local Configurations/Cache
+.streamlit/
+
+# IDE / Editor Configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Local Application Logs
+*.log

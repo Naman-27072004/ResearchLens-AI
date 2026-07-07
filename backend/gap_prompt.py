@@ -1,4 +1,24 @@
-def create_gap_prompt(papers):
+"""
+Gap Prompt Generator
+
+This module constructs a highly structured analysis prompt for the Gemini LLM
+to identify themes, shared limitations, research gaps, and generate novel 
+research ideas across multiple uploaded papers.
+"""
+
+from typing import Any
+
+def create_gap_prompt(papers: list[dict[str, Any]]) -> str:
+    """
+    Creates a detailed gap detection prompt for multiple research papers.
+
+    Args:
+        papers (list of dict): A list of dictionaries representing the uploaded papers.
+            Each dictionary should contain 'name' and 'text'.
+
+    Returns:
+        str: The fully constructed prompt containing instructions and papers' text.
+    """
 
     prompt = """
 You are a senior research reviewer.
