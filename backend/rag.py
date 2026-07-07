@@ -13,7 +13,6 @@ from google import genai
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-client = genai.Client()
 
 
 def answer_question(question: str, retrieved_chunks: list[str]) -> str:
@@ -53,6 +52,7 @@ Provide a detailed but concise answer.
 
     try:
         logger.info("Sending RAG request to Gemini API.")
+        client = genai.Client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt

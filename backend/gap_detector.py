@@ -18,7 +18,6 @@ from backend.gap_prompt import create_gap_prompt
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-client = genai.Client()
 
 
 def detect_research_gap(papers: list[dict[str, Any]]) -> str:
@@ -42,6 +41,7 @@ def detect_research_gap(papers: list[dict[str, Any]]) -> str:
 
     try:
         logger.info("Sending gap detection request to Gemini API.")
+        client = genai.Client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,

@@ -11,10 +11,7 @@ import logging
 from google import genai
 from dotenv import load_dotenv
 
-load_dotenv()
-
 logger = logging.getLogger(__name__)
-client = genai.Client()
 
 def analyze_paper(text: str) -> str:
     """
@@ -57,6 +54,7 @@ Paper:
 
     try:
         logger.info("Sending paper analysis request to Gemini API.")
+        client = genai.Client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt

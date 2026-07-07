@@ -15,6 +15,7 @@ Features:
     - Multi-Agent AI Routing (Supervisor-driven)
 """
 
+import os
 import logging
 import streamlit as st
 
@@ -63,6 +64,37 @@ st.caption("AI-Powered Research Paper Analysis using Gemini + RAG")
 
 st.sidebar.title("📚 ResearchLens")
 
+# Initialize Gemini API Key
+api_key = os.environ.get("GEMINI_API_KEY")
+
+# Check Streamlit secrets as fallback
+if not api_key and "GEMINI_API_KEY" in st.secrets:
+    api_key = st.secrets["GEMINI_API_KEY"]
+    os.environ["GEMINI_API_KEY"] = api_key
+
+# Sidebar input for API Key
+st.sidebar.markdown("---")
+st.sidebar.subheader("🔑 API Configuration")
+
+# Retrieve from session state if already stored
+if "gemini_api_key" not in st.session_state:
+    st.session_state.gemini_api_key = api_key or ""
+
+user_api_key = st.sidebar.text_input(
+    "Gemini API Key",
+    type="password",
+    value=st.session_state.gemini_api_key,
+    help="Enter your Gemini API key. If set via environment variables or Streamlit secrets, it will be pre-filled."
+)
+
+if user_api_key:
+    st.session_state.gemini_api_key = user_api_key
+    os.environ["GEMINI_API_KEY"] = user_api_key
+
+if not os.environ.get("GEMINI_API_KEY"):
+    st.sidebar.warning("⚠️ Gemini API key not found. Please enter it above or configure it in your environment / Streamlit secrets.")
+
+st.sidebar.markdown("---")
 st.sidebar.markdown("""
 ### Features
 

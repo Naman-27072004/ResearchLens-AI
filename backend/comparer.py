@@ -18,7 +18,6 @@ from backend.comparison_prompt import create_comparison_prompt
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-client = genai.Client()
 
 
 def compare_papers(papers: list[dict[str, Any]]) -> str:
@@ -38,6 +37,7 @@ def compare_papers(papers: list[dict[str, Any]]) -> str:
     # Generate response
     try:
         logger.info("Sending comparison query to Gemini API.")
+        client = genai.Client()
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=prompt,
