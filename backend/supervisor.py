@@ -14,7 +14,6 @@ from google import genai
 load_dotenv()
 
 logger = logging.getLogger(__name__)
-client = genai.Client()
 
 
 def route_query(user_query: str) -> str:
@@ -27,6 +26,8 @@ def route_query(user_query: str) -> str:
     Returns:
         str: The name of the selected agent (one of: 'summary', 'chat', 'comparison', 'research_gap', 'citation').
     """
+
+    client = genai.Client()
 
     prompt = f"""
 You are a Supervisor AI responsible for routing user requests.
